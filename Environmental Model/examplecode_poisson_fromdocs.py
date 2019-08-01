@@ -31,5 +31,5 @@ print('error_L2 =', error_L2)
 print('error_max =', error_max)
 # Plot solution
 import matplotlib.pyplot as plt
-plt.plot(u)
+plot(u)
 plt.show()
