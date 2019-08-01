@@ -16,9 +16,6 @@ L = f*v*dx
 # Compute solution
 u = Function(V)
 solve(a == L, u, bc)
-# Plot solution and mesh
-plot(u)
-plot(mesh)
 # Save solution to file in VTK format
 vtkfile = File('poisson/solution.pvd')
 vtkfile << u
@@ -32,5 +29,7 @@ error_max = np.max(np.abs(vertex_values_u_D - vertex_values_u))
 # Print errors
 print('error_L2 =', error_L2)
 print('error_max =', error_max)
-# Hold plot
-interactive()
+# Plot solution
+import matplotlib.pyplot as plt
+plot(u)
+plt.show()
