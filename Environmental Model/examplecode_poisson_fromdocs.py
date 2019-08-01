@@ -33,3 +33,4 @@ print('error_max =', error_max)
 import matplotlib.pyplot as plt
 plot(u)
 plt.show()
+plt.savefig("examplecode_poisson.png")
