@@ -9,7 +9,7 @@ from fenics import *
 import dolfin as df
 
 import numpy as np
-dt = 0.1
+dt = 0.01
 t=0
 # Create mesh and define function space
 mesh = RectangleMesh(Point(-2,-2),Point(2,2),20, 20)
@@ -19,7 +19,7 @@ V = FunctionSpace(mesh, 'P',1)
 import sympy as sy
 x,y=sy.symbols('x[0],x[1]')
 
-u_0 = Expression('exp(-0.1*a*pow(x[0]+2,2))',
+u_0 = Expression('exp(-10*a*pow(x[0]+2,2))',
                  degree=2, a=5)
 def boundary(x, on_boundary):
     return on_boundary and abs(x[0]+2)>1e-14
@@ -38,7 +38,7 @@ D = sym(as_tensor([[Dx, 0],
 uA = Function(V)  # Note: not TrialFunction!
 uB = interpolate(u_0,V)
 v = TestFunction(V)
-tF=10
+tF=100
 
 F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx
 import matplotlib.pyplot as pl
@@ -46,14 +46,14 @@ while t<=tF:
 	t+=dt
 	solve(F==0,uA)
 	
-	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t*10))+'.pvd')
+	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t*100))+'.pvd')
 	vtkfile << uA
 	uB.assign(uA)
 
 	# Plot solution
 	plot(uB)
 	pl.show()
-	pl.savefig('nonlinheat/nonlin_heat'+str(np.floor(t*10))+'.png')
+	pl.savefig('nonlinheat/nonlin_heat'+str(np.floor(t*100))+'.png')
 
 # Compute maximum error at vertices. This computation illustrates
 # an alternative to using compute_vertex_values as in poisson.py.
