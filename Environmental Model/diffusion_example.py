@@ -35,8 +35,8 @@ D = sym(as_tensor([[Dx, 0],
 uA = Function(V)  # Note: not TrialFunction!
 uB = interpolate(u_D,V)
 v = TestFunction(V)
-tF=1
-dt = 0.1
+tF=100
+dt = 1
 t=0
 F = dot(D*grad(uA), grad(v))*dx - uA**3*v*dx + v*(uA-uB)/dt*dx
 import matplotlib.pyplot as pl
@@ -44,14 +44,14 @@ while t<=tF:
 	t+=dt
 	solve(F==0,uA,bc)
 	
-	vtkfile = File('nonlin_testing/solution_'+str(t)+'.pvd')
+	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t))+'.pvd')
 	vtkfile << uA
 	uB.assign(uA)
 
 	# Plot solution
 	plot(uB)
 	pl.show()
-	pl.savefig('nonlin_poisson'+str(t)+'.png')
+	pl.savefig('nonlinheat/nonlin_heat'+str(np.floor(t))+'.png')
 
 # Compute maximum error at vertices. This computation illustrates
 # an alternative to using compute_vertex_values as in poisson.py.
