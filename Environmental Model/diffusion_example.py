@@ -9,49 +9,51 @@ from fenics import *
 import dolfin as df
 
 import numpy as np
-
+dt = 0.1
+t=0
 # Create mesh and define function space
-mesh = UnitSquareMesh(10, 10)
+mesh = RectangleMesh(Point(-2,-2),Point(2,2),20, 20)
 V = FunctionSpace(mesh, 'P',1)
 
 # Define boundary condition
 import sympy as sy
 x,y=sy.symbols('x[0],x[1]')
-u_c=1-0.5*x**2+0.23*x*y**2
-u_code=sy.printing.ccode(u_c) 
-u_D = Expression(u_code, degree=3)
 
+u_0 = Expression('exp(-0.1*a*pow(x[0]+2,2))',
+                 degree=2, a=5)
 def boundary(x, on_boundary):
-    return on_boundary
+    return on_boundary and abs(x[0]+2)>1e-14
+def boundaryLeft(x,on_boundary):
+    return on_boundary and abs(x[0]+2)<=1e-14
+bc1 = DirichletBC(V, Constant(0), boundary)
 
-bc = DirichletBC(V, u_D, boundary)
+bc=[bc1]
 Dx=1
-Dy=1
+Dy=0.1
 Dz=1
 # Define variational problem
 D = sym(as_tensor([[Dx, 0],
 	           [0, Dy]])) 
 # dispersion coefficient matrix
 uA = Function(V)  # Note: not TrialFunction!
-uB = interpolate(u_D,V)
+uB = interpolate(u_0,V)
 v = TestFunction(V)
-tF=100
-dt = 1
-t=0
-F = dot(D*grad(uA), grad(v))*dx - uA**3*v*dx + v*(uA-uB)/dt*dx
+tF=10
+
+F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx
 import matplotlib.pyplot as pl
 while t<=tF:
 	t+=dt
 	solve(F==0,uA,bc)
 	
-	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t))+'.pvd')
+	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t*10))+'.pvd')
 	vtkfile << uA
 	uB.assign(uA)
 
 	# Plot solution
 	plot(uB)
 	pl.show()
-	pl.savefig('nonlinheat/nonlin_heat'+str(np.floor(t))+'.png')
+	pl.savefig('nonlinheat/nonlin_heat'+str(np.floor(t*10))+'.png')
 
 # Compute maximum error at vertices. This computation illustrates
 # an alternative to using compute_vertex_values as in poisson.py.
