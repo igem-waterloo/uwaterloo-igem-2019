@@ -44,7 +44,7 @@ F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx
 import matplotlib.pyplot as pl
 while t<=tF:
 	t+=dt
-	solve(F==0,uA,bc)
+	solve(F==0,uA)
 	
 	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t*10))+'.pvd')
 	vtkfile << uA
