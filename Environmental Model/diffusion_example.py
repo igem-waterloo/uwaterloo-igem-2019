@@ -42,19 +42,20 @@ tF=100
 
 F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx
 import matplotlib.pyplot as pl
+counter = 1
 while t<=tF:
 	t+=dt
 	solve(F==0,uA)
 	
-	vtkfile = File('nonlinheat_testing/solution_'+str(np.floor(t*100))+'.pvd')
+	vtkfile = File('nonlinheat_testing/solution_'+str(counter)+'.pvd')
 	vtkfile << uA
 	uB.assign(uA)
 
 	# Plot solution
 	plot(uB)
 	pl.show()
-	pl.savefig('nonlinheat/nonlin_heat'+str(np.floor(t*100))+'.png')
-
+	pl.savefig('nonlinheat/nonlin_heat'+str(counter)+'.png')
+	counter+=1
 # Compute maximum error at vertices. This computation illustrates
 # an alternative to using compute_vertex_values as in poisson.py.
 u_e = interpolate(u_D, V)
