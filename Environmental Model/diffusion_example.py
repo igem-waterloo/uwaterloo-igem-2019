@@ -9,7 +9,7 @@ from fenics import *
 import dolfin as df
 
 import numpy as np
-dt = 0.01
+dt = 0.001
 t=0
 # Create mesh and define function space
 mesh = BoxMesh(Point(-2,-2,-2),Point(2,2,2),20,20,20)
@@ -35,7 +35,7 @@ D = sym(as_tensor([[Dx,  0,  0],
 uA = Function(V)  # Note: not TrialFunction!
 uB = interpolate(u_0,V)
 v = TestFunction(V)
-tF=5
+tF=1
 w=-0.1
 F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx - v*w*grad(uA)[2]*dx
 import matplotlib.pyplot as pl
