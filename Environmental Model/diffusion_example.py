@@ -1,32 +1,20 @@
-#Nonlinear diffusion model from documentation
-#Here we use the Algebraic Newton Method to "discretize" the nonlinearity out
-#MODEL: -div(q(u)grad(u))=f -> Nonlinear poisson equation
-
-# Warning: from fenics import * will import both `sym` and
-# `q` from FEniCS. We therefore import FEniCS first and then
-# overwrite these objects.
+#Model: div(D*grad(c))-w dc/dz = -dc/dt
 from fenics import *
 import dolfin as df
-
 import numpy as np
-dt = 0.001
+
+dt = 0.005
 t=0
+
 # Create mesh and define function space
-mesh = BoxMesh(Point(-2,-2,-2),Point(2,2,2),20,20,20)
+mesh = BoxMesh(Point(-4,-4,-2),Point(4,4,2),20,20,20)
 V = FunctionSpace(mesh, 'P',1)
 
-u_0 = Expression('exp(-10*a*pow(x[2]-2,2))',
-                 degree=3, a=5)
-def boundary(x, on_boundary):
-    return on_boundary and abs(x[0]+2)>1e-14
-def boundaryLeft(x,on_boundary):
-    return on_boundary and abs(x[0]+2)<=1e-14
-def boundaryBottom(x,on_boundary):
-    return on_boundary and abs(x[1]-2)<=1e-14
-
-Dx=1
-Dy=1
-Dz=1
+u_0 = Expression('3*exp(-a*(pow(x[1],2)+pow(x[0],2)+pow(x[2]-1.5,2)))',
+                 degree=3, a=1)
+Dx=3
+Dy=3
+Dz=3
 # Define variational problem
 D = sym(as_tensor([[Dx,  0,  0],
 	           [0,  Dy,  0],
