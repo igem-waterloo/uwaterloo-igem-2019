@@ -2,16 +2,33 @@
 from fenics import *
 import dolfin as df
 import numpy as np
+import matplotlib.pyplot as pl
 
-dt = 0.005
+dt = 0.05
 t=0
 
 # Create mesh and define function space
-mesh = BoxMesh(Point(-4,-4,-2),Point(4,4,2),20,20,20)
+mesh = BoxMesh(Point(-10,-10,-10),Point(10,10,2),30,30,30)
 V = FunctionSpace(mesh, 'P',1)
+dofmap = V.dofmap()
 
-u_0 = Expression('3*exp(-a*(pow(x[1],2)+pow(x[0],2)+pow(x[2]-1.5,2)))',
-                 degree=3, a=1)
+u_0 = Expression('10*exp(-a*(pow(x[1],2)+pow(x[0],2)+pow(x[2]-1.5,2)))',
+                 degree=3, a=0.1)
+#Define subdomains (root nodules) - prototype class
+class Nodule(SubDomain):
+	def inside(self,x,on_boundary):
+		r=[0,0,0]
+		R = ((x[0]-r[0])**2+(x[1]-r[1])**2+(x[2]-r[2])**2)**0.5
+		return True if R <= 1 else False
+subdomain1=Nodule()
+cf=MeshFunction('size_t',mesh,3)
+subdomain1.mark(cf,1)
+heaviside = Function(V)
+for cell in cells(mesh): # set the characteristic functions
+    if cf[cell] == 1:
+        heaviside.vector()[dofmap.cell_dofs(cell.index())] = 1
+print(heaviside.vector())
+	
 Dx=3
 Dy=3
 Dz=3
@@ -23,12 +40,13 @@ D = sym(as_tensor([[Dx,  0,  0],
 uA = Function(V)  # Note: not TrialFunction!
 uB = interpolate(u_0,V)
 v = TestFunction(V)
-tF=1
-w=-0.1
-F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx - v*w*grad(uA)[2]*dx
-import matplotlib.pyplot as pl
+tF=10
+w=1
+K=10*heaviside
+F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx - v*w*grad(uA)[2]*dx + K*uA*v*dx
 counter = 1
 vtkfile = File('diffusion3d/solution.pvd')
+
 while t<=tF:
 	t+=dt
 	solve(F==0,uA)
@@ -36,10 +54,5 @@ while t<=tF:
 	vtkfile << uA, counter
 	uB.assign(uA)
 	counter+=1
-# Compute maximum error at vertices. This computation illustrates
-# an alternative to using compute_vertex_values as in poisson.py.
-u_e = interpolate(u_D, V)
 
-error_max = np.abs(u_e.vector() - uB.vector()).max()
-print('error_max = ', error_max)
 
