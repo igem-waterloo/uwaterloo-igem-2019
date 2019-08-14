@@ -1,58 +1,61 @@
-#Nonlinear diffusion model from documentation
-#Here we use the Algebraic Newton Method to "discretize" the nonlinearity out
-#MODEL: -div(q(u)grad(u))=f -> Nonlinear poisson equation
-
-# Warning: from fenics import * will import both `sym` and
-# `q` from FEniCS. We therefore import FEniCS first and then
-# overwrite these objects.
+#Model: div(D*grad(c))-w dc/dz = -dc/dt
 from fenics import *
+import dolfin as df
+import numpy as np
+import matplotlib.pyplot as pl
 
-def q(u):
-    "Return nonlinear coefficient"
-    return 1 + u**2
-
-# Use SymPy to compute f from the manufactured solution u
-import sympy as sym
-x, y = sym.symbols('x[0], x[1]')
-u = 1 + x + 2*y
-f = - sym.diff(q(u)*sym.diff(u, x), x) - sym.diff(q(u)*sym.diff(u, y), y)
-f = sym.simplify(f)
-u_code = sym.printing.ccode(u)
-f_code = sym.printing.ccode(f)
-print('u =', u_code)
-print('f =', f_code)
+dt = 0.05
+t=0
 
 # Create mesh and define function space
-mesh = UnitSquareMesh(8, 8)
-V = FunctionSpace(mesh, 'P', 1)
+mesh = BoxMesh(Point(-10,-10,-10),Point(10,10,2),30,30,30)
+V = FunctionSpace(mesh, 'P',1)
+dofmap = V.dofmap() #this basically lets us grab the raw data from the mesh about cells
 
-# Define boundary condition
-u_D = Expression(u_code, degree=2)
+u_0 = Expression('10*exp(-a*(pow(x[1],2)+pow(x[0],2)+pow(x[2]-1.5,2)))',
+                 degree=3, a=0.1)
+#Define subdomains (root nodules) - prototype class
+class Nodule(SubDomain):
+	def inside(self,x,on_boundary):
+		r=[0,0,0]
+		R = ((x[0]-r[0])**2+(x[1]-r[1])**2+(x[2]-r[2])**2)**0.5
+		return True if R <= 1 else False
+subdomain1=Nodule() #define a new root nodule
+cf=MeshFunction('size_t',mesh,3) 
+#define a function with values on the cells of the mesh (the 3 means '3d' blocks)
 
-def boundary(x, on_boundary):
-    return on_boundary
-
-bc = DirichletBC(V, u_D, boundary)
-
+subdomain1.mark(cf,1) #mark the function as 1 inside the subdomain
+heaviside = Function(V) #define a function in V - this will be the heaviside
+for cell in cells(mesh): # set the characteristic functions
+    if cf[cell] == 1:
+        heaviside.vector()[dofmap.cell_dofs(cell.index())] = 1
+	#project the characteristic function cf into our space V 
+	# ie - this is the heaviside function	
+Dx=3
+Dy=3
+Dz=3
 # Define variational problem
-u = Function(V)  # Note: not TrialFunction!
+D = sym(as_tensor([[Dx,  0,  0],
+	           [0,  Dy,  0],
+	           [0,   0, Dz]])) 
+# dispersion coefficient matrix
+uA = Function(V)  # Note: not TrialFunction!
+uB = interpolate(u_0,V)
 v = TestFunction(V)
-f = Expression(f_code, degree=2)
-F = q(u)*dot(grad(u), grad(v))*dx - f*v*dx
 
-# Compute solution
-solve(F == 0, u, bc)
+tF=10
+w=1
+K=10*heaviside #degradation only happening inside the subdomain
+F = dot(D*grad(uA), grad(v))*dx + v*(uA-uB)/dt*dx - v*w*grad(uA)[2]*dx + K*uA*v*dx
+counter = 1
+vtkfile = File('diffusion3d/solution.pvd')
 
-# Plot solution
-import matplotlib.pyplot as pl
-plot(u)
-pl.show()
-pl.savefig('nonlin_poisson.png')
+while t<=tF:
+	t+=dt
+	solve(F==0,uA)
+	uA.rename('uA','uA')
+	vtkfile << uA, counter
+	uB.assign(uA)
+	counter+=1
 
-# Compute maximum error at vertices. This computation illustrates
-# an alternative to using compute_vertex_values as in poisson.py.
-u_e = interpolate(u_D, V)
-import numpy as np
-error_max = np.abs(u_e.vector().array() - u.vector().array()).max()
-print('error_max = ', error_max)
 
