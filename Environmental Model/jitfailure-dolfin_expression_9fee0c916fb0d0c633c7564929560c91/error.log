@@ -1,0 +1,9 @@
+/tmp/tmp8bibmym5/dolfin_expression_9fee0c916fb0d0c633c7564929560c91.cpp: In member function ‘virtual void dolfin::dolfin_expression_9fee0c916fb0d0c633c7564929560c91::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const’:
+/tmp/tmp8bibmym5/dolfin_expression_9fee0c916fb0d0c633c7564929560c91.cpp:62:49: error: unable to find numeric literal operator ‘operator""pow’
+           values[0] = 0.1*exp(-a*(pow(x[2]-2,2)+0.1pow(x[1],2)+0.1pow(x[0],2)));
+                                                 ^~~~~~
+/tmp/tmp8bibmym5/dolfin_expression_9fee0c916fb0d0c633c7564929560c91.cpp:62:49: note: use -std=gnu++11 or -fext-numeric-literals to enable more built-in suffixes
+/tmp/tmp8bibmym5/dolfin_expression_9fee0c916fb0d0c633c7564929560c91.cpp:62:64: error: unable to find numeric literal operator ‘operator""pow’
+           values[0] = 0.1*exp(-a*(pow(x[2]-2,2)+0.1pow(x[1],2)+0.1pow(x[0],2)));
+                                                                ^~~~~~
+/tmp/tmp8bibmym5/dolfin_expression_9fee0c916fb0d0c633c7564929560c91.cpp:62:64: note: use -std=gnu++11 or -fext-numeric-literals to enable more built-in suffixes
