@@ -12,29 +12,27 @@ import mshr as ms
 dt = 0.05
 t = 0
 
-
 class Nodule(SubDomain):
     def inside(self, x, on_boundary):
         r = [0, 0, 0]
         R = ((x[0]-r[0])**2+(x[1]-r[1])**2+(x[2]-r[2])**2)**0.5
         return True if R <= 1 else False
 
-
 # Define subdomains (root nodules) - prototype class:
 subdomain1 = Nodule()  # define a new root nodule
 
-<<<<<<< HEAD:Environmental Model/diffusion_prod.py
+
 u_0 = Expression('(0.005/pow(25*2*3.141,0.5))*exp(-1*(0.5*pow(x[2]-2,2)+0.1*pow(x[1],2)+0.1*pow(x[0],2)))',
                  degree=2)
 cf=MeshFunction('size_t',mesh,3) 
 #define a function with values on the cells of the mesh (the 3 means '3d' blocks)
-=======
+
 # Create mesh and define function space:
 mesh = BoxMesh(Point(-10, -10, -10), Point(10, 10, 10), 15, 15, 15)
 # mesh=Mesh('geometry.xml')
 V = FunctionSpace(mesh, 'P', 1)
 dofmap = V.dofmap()  # this basically lets us grab the raw data from the mesh about cells
->>>>>>> 14da37a3c9f36c26ec3448470af26d607d52d28d:Environmental Model/diffusion_example.py
+
 
 u_0 = Expression('0.001*exp(-1*(pow(x[2]-2,2)+0.1*pow(x[1],2)+0.1*pow(x[0],2)))', degree=2)
 cf = MeshFunction('size_t', mesh, 3)  # define a function with values on the cells of the mesh (the 3 means '3d' blocks)
@@ -62,19 +60,18 @@ u = Function(V)  # Note: not TrialFunction!
 uB = interpolate(u_0,V)
 v = TestFunction(V)
 
-<<<<<<< HEAD:Environmental Model/diffusion_prod.py
 tF=50
 w=Constant(0.004*100)
 K=2.304e-4*100*heaviside #degradation only happening inside the subdomain
 A = inner(D*grad(uA), grad(v))*dt*dx + v*uA*dx - v*w*dt*grad(uA)[2]*dx + dt*K*uA*v*dx
 L=v*uB*dx
-=======
+
 tF = 50
 w = Constant(0.004*100)
 K = 10000*heaviside  # degradation only happening inside the subdomain
 A = inner(D*grad(uA), grad(v))*dt*dx + v*uA*dx - v*w*dt*grad(uA)[2]*dx + dt*K*uA*v*dx  # PDE to solve (nonlinear terms)
 L = v*uB*dx  # PDE to solve (linear terms)
->>>>>>> 14da37a3c9f36c26ec3448470af26d607d52d28d:Environmental Model/diffusion_example.py
+
 counter = 1
 vtkfile = File('diffusion3d_working/solution.pvd')
 
