@@ -4,9 +4,10 @@ alpha_L = 0.0024
 alpha_T = 0.00024
 KH = 2.54e-7
 nu_w = 5.48e-4 
+vmax = 2.304e-4
 
 def dae(theta_a):
-	return 8.44e-3 * (theta_a**1.5)/0.435
+	return 8.44e-3 * (theta_a**1.5)/0.45
 
 def dwe(theta_w):
 	return 6.13e-5 * (theta_w - 0.04)*theta_w
@@ -24,5 +25,9 @@ def D(theta_a,theta_w):
 def ve(theta_a,theta_w):
 	return nu_w/R(theta_a,theta_w)
 
-print(D(0.3,0.435-0.3))
-print(ve(0.3,0.435-0.3))
+def Vmax(theta_a,theta_w):
+	return vmax/R(theta_a,theta_w)
+
+print(D(0,0.45))
+print(ve(0,0.45))
+print(Vmax(0,0.45))
