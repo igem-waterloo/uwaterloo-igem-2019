@@ -1,5 +1,6 @@
 *.vtu
 *.pvd
-*.iml
-/.idea
-
+*.pvtu
+*.xdmf
+*.h5
+.idea
