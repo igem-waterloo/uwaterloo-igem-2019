@@ -12,11 +12,13 @@ import mshr as ms
 dt = 0.02
 t = 0
 
+
 class Nodule(SubDomain):
     def inside(self, x, on_boundary):
         r = [0, 0, 0]
         R = ((x[0]-r[0])**2+(x[1]-r[1])**2+(x[2]-r[2])**2)
         return True if R <= 1 else False
+
 
 # Define subdomains (root nodules) - prototype class:
 subdomain1 = Nodule()  # define a new root nodule
@@ -56,11 +58,11 @@ u = Function(V)  # Note: not TrialFunction!
 uB = interpolate(u_0,V)
 v = TestFunction(V)
 
-tF=50
-w=Constant(0.004*100)
-K=0.0017*100*heaviside #degradation only happening inside the subdomain
+tF = 50
+w = Constant(0.004*100)
+K = 0.0017*100*heaviside #degradation only happening inside the subdomain
 A = inner(D*grad(uA), grad(v))*dt*dx + v*uA*dx - v*w*dt*grad(uA)[2]*dx + dt*K*uA*v*dx
-L=v*uB*dx
+L = v*uB*dx
 
 counter = 0
 vtkfile = File('diffusion3d_working/solution.pvd')
