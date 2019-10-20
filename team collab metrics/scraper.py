@@ -15,8 +15,8 @@ import pandas as pd
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 #14.207.28.100
-proxy_ip = "167.71.142.245"
-proxy_port = "8080"
+proxy_ip = "51.158.120.84"
+proxy_port = "8811"
 proxies = {
     "http": 'http://' + proxy_ip + ':' + proxy_port, 
     "https": 'http://' + proxy_ip + ':' + proxy_port
@@ -30,9 +30,9 @@ adapter = HTTPAdapter(max_retries=retry)
 session.mount('http://', adapter)
 session.mount('https://', adapter)
 
-# url = 'https://httpbin.org/ip'
-# response = session.get(url)
-# print(response.json())
+url = 'https://httpbin.org/ip'
+response = session.get(url)
+print(response.json())
 # import sys
 # sys.exit()
 
@@ -103,26 +103,16 @@ def get_soup(team_page_link, team_name, original_team_name):
         split_text = visible_text.split()
         if "collaborations" in team_page_link.lower():
             for k in all_teams:
-                # if k == "Minnesota":
-                #   print("hit Minnesota")
-                #   print(k in split_text)
-                # if team_page_link == "http://2015.igem.org/Team:Cairo_Egypt/Collaborations":
-                #   print(split_text)
-                for index_j, j in enumerate(split_text):
-                    # if team_page_link == "http://2015.igem.org/Team:Cairo_Egypt/Collaborations":
-                    #   print(k, j)
-                    #   print(fuzz.WRatio(k, j))
-
-                    # Uses Levenshtein distance
+                for index_j, j in enumerate(split_text):                    
                     underscore_team = k.replace(" ", "_")
-                    # jdata = j.decode("utf-8")
+                    # Avoid attempting to parse Unicode-specific characters
                     try:
                         test_unicode = str(j.encode("ascii"))
                         if index_j < len(split_text)-1:
                             test_unicode2 = str((j+split_text[index_j+1]).encode("ascii"))
                     except UnicodeEncodeError:
                         continue
-                    # print(j)
+                    # Uses Levenshtein distance for fuzzy string matching
                     if ((fuzz.ratio(k.lower(), j.lower()) >= 95
                         or fuzz.WRatio(k.lower(), j.lower()) >= 95)
                         or 
@@ -136,59 +126,57 @@ def get_soup(team_page_link, team_name, original_team_name):
                         if k != original_team_name:
                             collabs.add(k)
         # no_punctuation = visible_text.translate(translator)
-        # print("nouns1")
         nouns =  [x[0].lower() for x in nltk.pos_tag(nltk.word_tokenize(visible_text)) if x[1][0] == "N" and x[0].lower() in bio_words]
-        # totalCounter += Counter(nouns.split())
         totalCounter += Counter(nouns)
-        # print("nouns2")
         page_links = team_page_soup.findAll('a')
-        # print("pppp" + team_page_link, page_links)
         for i in page_links:
             link = i.get("href")
-            # print("link", link, team_name)
             if link != None and team_name in link and link[0:4] == "http":
-                # print("link", link)
                 tc, collabsNew = get_soup(link, team_name, original_team_name)
                 totalCounter += tc
                 collabs  = collabs.union(collabsNew)
     return totalCounter, collabs
 
 # To populate all teams
-# for year in range(2018, 2019):
-#     url = "https://igem.org/Team_Wikis?year=" + str(year)
-#     response = requests.get(url)
-#     soup = BeautifulSoup(response.text, "html.parser")
-#     cur_year_links = soup.findAll('a')
-    
-#     for i in cur_year_links:        
-#         print("NEXT TEAM")
-#         print("-"*50)
-#         team_page_link = i.get("href")
-#         if team_page_link != None and len(team_page_link) > 26:
-#             print(team_page_link[26:])
-#             # print(team_page_link)
-#             # if team_page_link != 'http://2015.igem.org/Team:CityU HK':
-#             #   continue
+def populate_all_teams2018():
+	global all_teams
+	for year in range(2018, 2019):
+	    url = "https://igem.org/Team_Wikis?year=" + str(year)
+	    response = requests.get(url)
+	    soup = BeautifulSoup(response.text, "html.parser")
+	    cur_year_links = soup.findAll('a')
+	    
+	    for i in cur_year_links:        
+	        print("NEXT TEAM")
+	        print("-"*50)
+	        team_page_link = i.get("href")
+	        if team_page_link != None and len(team_page_link) > 26:
+	            print(team_page_link[26:])
+	            # print(team_page_link)
+	            # if team_page_link != 'http://2015.igem.org/Team:CityU HK':
+	            #   continue
 
-#             team_name = team_page_link[26:]
-#             all_teams.add(team_name)
+	            team_name = team_page_link[26:]
+	            all_teams.add(team_name)
 
-all_teams = set(geo_from_json.keys())
+	all_teams = set(geo_from_json.keys())
 
-# geo_teams = {}
-# for team in all_teams:
-#   location = geolocator.geocode(team, language='en')
-#   print("TEAM:", team)
-#   print("-"*50)
-#   if location != None:
-#       # print (json.dumps(location.raw, indent=4))
-#       # print (location.address)
-#       print(location.latitude, location.longitude)
-#       geo_teams[team] = {"lat": location.latitude, "lng": location.longitude}
-#   else:
-#       print ("No location!" , location)
-#       geo_teams[team] = None
-#   print(geo_teams)
+def populate_geo_teams():
+	global all_teams, geo_teams
+	geo_teams = {}
+	for team in all_teams:
+	  location = geolocator.geocode(team, language='en')
+	  print("TEAM:", team)
+	  print("-"*50)
+	  if location != None:
+	      # print (json.dumps(location.raw, indent=4))
+	      # print (location.address)
+	      print(location.latitude, location.longitude)
+	      geo_teams[team] = {"lat": location.latitude, "lng": location.longitude}
+	  else:
+	      print ("No location!" , location)
+	      geo_teams[team] = None
+	  # print(geo_teams)
 
 # geo_teams = {'Bielefeld-CeBiTec': {'lat': 52.039406, 'lng': 8.491052}, 'Cornell': {'lat': 42.4534492, 'lng': -76.4735027}, 'Tsinghua-A': {'lat': 39.9996674, 'lng': 116.3264439}, 'TUDelft': {'lat': 52.0021256, 'lng': 4.3732982}, 'UI Indonesia': {'lat': -6.3627638, 'lng': 106.8270482}, 'GDSYZX': {'lat': 23.126054, 'lng': 113.277396}, 'SCAU-China': {'lat': 23.1568182, 'lng': 113.3536811}, 'FSU': {'lat': 30.4418778, 'lng': -84.2984889}, 'NUS Singapore-A': {'lat': 1.2966426, 'lng': 103.7763939}, 'Worldshaper-Wuhan': {'lat': 30.592849, 'lng': 114.305539}, 'Leiden': {'lat': 52.1601144, 'lng': 4.4970097}, 'IIT Kanpur': {'lat': 26.5123388, 'lng': 80.2329}, 'Auckland MOD': {'lat': -36.8484597, 'lng': 174.7633315}, 'HSHL': {'lat': 39.2870287, 'lng': -76.6240078}, 'Lethbridge': {'lat': 49.6955856, 'lng': -112.8451364}, 'NU Kazakhstan': {'lat': 51.0905303, 'lng': 71.3981646}, 'Saint Joseph': {'lat': 39.7674578, 'lng': -94.84668099999999}, 'Bordeaux': {'lat': 44.837789, 'lng': -0.57918}, 'CDHSU-CHINA': None, 'H14Z1 Hangzhou': {'lat': 30.274084, 'lng': 120.15507}, 'SDU-CHINA': {'lat': 36.64893, 'lng': 117.029014}, 'XJTLU-CHINA': {'lat': 31.274822, 'lng': 120.738094}, 'SMMU-China': {'lat': 31.30603049999999, 'lng': 121.5292392}, 'DTU-Denmark': {'lat': 55.7855742, 'lng': 12.521381}, 'Duesseldorf': {'lat': 51.2277411, 'lng': 6.7734556}, 'Lund': {'lat': 55.7046601, 'lng': 13.1910073}, 'Munich': {'lat': 48.1351253, 'lng': 11.5819805}, 'Goettingen': {'lat': 51.54128040000001, 'lng': 9.915803499999999}, 'HUBU-Wuhan': {'lat': 30.5470836, 'lng': 114.2980092}, 'Linkoping Sweden': {'lat': 58.41080700000001, 'lng': 15.6213728}, 'UCSC': {'lat': 36.9880503, 'lng': -122.0582093}, 'SDSZ China': {'lat': 39.911251, 'lng': 116.368345}, 'HFLS ZhejiangUnited': {'lat': 40.7509446, 'lng': -73.97386879999999}, 'GZHS-United': None, 'NTNU Trondheim': {'lat': 63.4288793, 'lng': 10.3904238}, 'UIOWA': {'lat': 41.6626963, 'lng': -91.5548998}, 'SJTU-software': {'lat': 31.0252201, 'lng': 121.4337784}, 'BNDS CHINA': {'lat': 39.902615, 'lng': 116.255987}, 'RMHS Maryland': {'lat': 39.0793201, 'lng': -77.1466232}, 'MichiganState': {'lat': 42.701848, 'lng': -84.4821719}, 'JMU Wuerzburg': {'lat': 49.7881814, 'lng': 9.93526}, 'SYSU-CHINA': {'lat': 23.0965384, 'lng': 113.298883}, 'Waterloo': {'lat': 42.492786, 'lng': -92.34257749999999}, 'SHPH-Shanghai': {'lat': 31.230416, 'lng': 121.473701}, 'DLUT China': {'lat': 38.880381, 'lng': 121.529021}, 'SZU-China': {'lat': 22.53306, 'lng': 113.932813}, 'Vilnius-Lithuania': {'lat': 54.6871555, 'lng': 25.2796514}, 'Tianjin': {'lat': 39.3433574, 'lng': 117.3616476}, 'TPHS San Diego': {'lat': 32.9574372, 'lng': -117.2261884}, 'Tuebingen': {'lat': 48.5216364, 'lng': 9.0576448}, 'Pittsburgh': {'lat': 40.44062479999999, 'lng': -79.9958864}, 'BioMarvel': None, 'CIEI-BJ': {'lat': -23.027504, 'lng': -43.52018}, 'Hong Kong HKU': {'lat': 22.2829989, 'lng': 114.1370848}, 'ACIBADEM ISTANBUL': {'lat': 41.0417388, 'lng': 28.9827314}, 'Austin UTexas': {'lat': 30.2849185, 'lng': -97.7340567}, 'Harvard': {'lat': 42.3770029, 'lng': -71.11666009999999}, 'USAFA': {'lat': 38.9983094, 'lng': -104.8613176}, 'LZU-CHINA': {'lat': 36.0477699, 'lng': 103.8585624}, 'Pittsburgh CSL': {'lat': 40.438209, 'lng': -79.94851799999999}, 'Rotterdam HR': {'lat': 51.9134313, 'lng': 4.4684668}, 'Hamline Genetics': {'lat': 44.9650603, 'lng': -93.1645547}, 'RHIT': {'lat': 39.4816947, 'lng': -87.3252467}, 'IISc-Bangalore': {'lat': 13.0218597, 'lng': 77.5671423}, 'AFCM-Egypt': {'lat': 30.0845176, 'lng': 31.3041407}, 'IIT-Madras': {'lat': 12.9914929, 'lng': 80.2336907}, 'Melbourne': {'lat': -37.8136276, 'lng': 144.9630576}, 'SMS Shenzhen': {'lat': 22.551389, 'lng': 114.121602}, 'JNFLS': {'lat': 36.654028, 'lng': 117.004155}, 'Sorbonne U Paris': {'lat': 48.8484556, 'lng': 2.3432774}, 'Claremont': {'lat': 34.0966764, 'lng': -117.7197785}, 'ETH Zurich': {'lat': 47.376313, 'lng': 8.547669899999999}, 'CCA-San Diego': {'lat': 32.9590757, 'lng': -117.1894333}, 'Minnesota': {'lat': 46.729553, 'lng': -94.6858998}, 'Tokyo Tech': {'lat': 35.6051229, 'lng': 139.6835302}, 'UT-Knoxville': {'lat': 35.9544013, 'lng': -83.92945639999999}, 'OUC-China': {'lat': 36.061255, 'lng': 120.335301}, 'Missouri Rolla': {'lat': 37.948544, 'lng': -91.7715303}, 'CO Mines': {'lat': 39.7510475, 'lng': -105.2225708}, 'Fudan-CHINA': {'lat': 31.2974197, 'lng': 121.5036178}, 'BioIQS-Barcelona': {'lat': 41.4031242, 'lng': 2.1196377}, 'BrockU': {'lat': 43.1175731, 'lng': -79.2476925}, 'UiOslo Norway': {'lat': 59.9138688, 'lng': 10.7522454}, 'TAS Taipei': {'lat': 25.1169089, 'lng': 121.5291433}, 'CMUQ': {'lat': 25.316358, 'lng': 51.438599}, 'ZJU-China': {'lat': 30.30868439999999, 'lng': 120.0864995}, 'BUCT-China': {'lat': 39.970954, 'lng': 116.421053}, 'Westminster UK': {'lat': 51.5001754, 'lng': -0.1332326}, 'Grenoble-Alpes': {'lat': 45.188529, 'lng': 5.724524}, 'Hong Kong-CUHK': {'lat': 22.4195827, 'lng': 114.2067604}, 'NTHU Formosa': {'lat': 24.7947253, 'lng': 120.9932316}, 'BJRS China': None, 'Stuttgart': {'lat': 48.7758459, 'lng': 9.1829321}, 'UCLouvain': {'lat': 50.66968749999999, 'lng': 4.6155909}, 'SHSU China': {'lat': 30.7129974, 'lng': -95.5472905}, 'Northwestern': {'lat': 42.0564594, 'lng': -87.67526699999999}, 'ColegioFDR Peru': {'lat': -12.0774235, 'lng': -76.97166680000001}, 'ASTWS-China': None, 'UST Beijing': {'lat': 39.90419989999999, 'lng': 116.4073963}, 'UCopenhagen': {'lat': 55.6802303, 'lng': 12.5724096}, 'MIT': {'lat': 42.360091, 'lng': -71.09416}, 'Gaston Day School': {'lat': 35.201648, 'lng': -81.14122499999999}, 'BFSUICC-China': {'lat': 42.81544, 'lng': -82.515502}, 'Hamburg': {'lat': 53.5510846, 'lng': 9.9936819}, 'Virginia': {'lat': 37.4315734, 'lng': -78.6568942}, 'Emory': {'lat': 33.7971368, 'lng': -84.32224}, 'NEFU China': {'lat': 45.7240008, 'lng': 126.6403002}, 'Lethbridge HS': {'lat': 49.6736681, 'lng': -112.9101091}, 'Valencia UPV': {'lat': 39.4807985, 'lng': -0.3406299}, 'NYMU-Taipei': {'lat': 25.123002, 'lng': 121.513702}, 'HebrewU': {'lat': 31.7945578, 'lng': 35.2414009}, 'UNSW Australia': {'lat': -33.917347, 'lng': 151.2312675}, 'Uppsala': {'lat': 59.85856380000001, 'lng': 17.6389267}, 'Nanjing-China': {'lat': 32.060255, 'lng': 118.796877}, 'Mingdao': None, 'BGU Israel': {'lat': 31.262218, 'lng': 34.801461}, 'Newcastle': {'lat': 54.978252, 'lng': -1.61778}, 'UC Davis': {'lat': 38.5382322, 'lng': -121.7617125}, 'SBS SH 112144': None, 'Gifu': {'lat': 35.42342259999999, 'lng': 136.7606217}, 'Nanjing NFLS': {'lat': 32.056151, 'lng': 118.801451}, 'ZJUT-China': {'lat': 30.225796, 'lng': 120.039175}, 'UChile Biotec': None, 'NJU-China': {'lat': 32.0568391, 'lng': 118.7789602}, 'SIAT-SCIE': None, 'Jiangnan': {'lat': 40.7083773, 'lng': -74.01404660000001}, 'NTU-Singapore': {'lat': 1.3483099, 'lng': 103.6831347}, 'Tec-Chihuahua': {'lat': 28.6643762, 'lng': -106.0905708}, 'Purdue': {'lat': 40.4237054, 'lng': -86.92119459999999}, 'ColumbiaNYC': {'lat': 40.8075355, 'lng': -73.9625727}, 'SHSID China': {'lat': 31.1411957, 'lng': 121.4369131}, 'McGill': {'lat': 45.50478469999999, 'lng': -73.5771511}, 'Toronto': {'lat': 43.653226, 'lng': -79.3831843}, 'UFlorida': {'lat': 29.6436325, 'lng': -82.3549302}, 'WPI Worcester': {'lat': 42.27463669999999, 'lng': -71.8063379}, 'IISER-Mohali': {'lat': 30.6649526, 'lng': 76.73004209999999}, 'Tec-Monterrey': {'lat': 28.67405, 'lng': -106.077612}, 'IIT Delhi': {'lat': 28.5449756, 'lng': 77.19262839999999}, 'KCL UK': {'lat': 51.5114864, 'lng': -0.115997}, 'BCU': {'lat': 42.2331458, 'lng': -87.9445206}, 'Hong Kong JSS': None, 'UChicago': {'lat': 41.7886079, 'lng': -87.5987133}, 'NUS Singapore-Sci': {'lat': 1.2966426, 'lng': 103.7763939}, 'XJTU-China': {'lat': 34.250803, 'lng': 108.983693}, 'SJTU-BioX-Shanghai': {'lat': 31.0252201, 'lng': 121.4337784}, 'Chalmers-Gothenburg': {'lat': 57.6897063, 'lng': 11.9741654}, 'Oxford': {'lat': 51.7520209, 'lng': -1.2577263}, 'HK HCY LFC': None, 'NCHU Taichung': {'lat': 24.123552, 'lng': 120.675326}, 'Tongji-Software': {'lat': 31.2627211, 'lng': 121.4598975}, 'Exeter': {'lat': 36.2960613, 'lng': -119.1420517}, 'Baltimore BioCrew': {'lat': 39.2941418, 'lng': -76.56225429999999}, 'Navarra BG': None, 'NEU China B': {'lat': 42.3398067, 'lng': -71.0891717}, 'SFLS Shenzhen': {'lat': 22.547956, 'lng': 114.093636}, 'USMA-West Point': {'lat': 41.3918372, 'lng': -73.9625033}, 'Dalhousie Halifax NS': {'lat': 44.63658119999999, 'lng': -63.59165549999999}, 'Peking': {'lat': 39.90419989999999, 'lng': 116.4073963}, 'CSU Fort Collins': {'lat': 40.573436, 'lng': -105.0865473}, 'Botchan Lab Tokyo': {'lat': 35.6803997, 'lng': 139.7690174}, 'Lambert GA': {'lat': 34.1062076, 'lng': -84.1389311}, 'Makerere University': {'lat': 0.3292819, 'lng': 32.5710773}, 'SSHS-Shenzhen': {'lat': 22.543096, 'lng': 114.057865}, 'BIT-China': {'lat': 39.9603704, 'lng': 116.3123886}, 'FAU Erlangen': {'lat': 49.5978804, 'lng': 11.0045507}, 'GreatBay China': {'lat': 43.0721378, 'lng': -70.79865989999999}, 'Tartu TUIT': {'lat': 58.37798299999999, 'lng': 26.7290383}, 'Vilnius-Lithuania-OG': {'lat': 54.6871555, 'lng': 25.2796514}, 'Tacoma RAINmakers': {'lat': 47.2528768, 'lng': -122.4442906}, 'East Chapel Hill': {'lat': 35.9131996, 'lng': -79.0558445}, 'Athens': {'lat': 37.9838096, 'lng': 23.7275388}, 'Jilin China': {'lat': 43.837883, 'lng': 126.549572}, 'BNU-China': {'lat': 39.9619537, 'lng': 116.3662615}, 'HUST-China': {'lat': 30.5130043, 'lng': 114.4202756}, 'NKU CHINA': {'lat': 39.0319664, 'lng': -84.4645836}, 'NYU Abu Dhabi': {'lat': 24.5238948, 'lng': 54.4345558}, 'WHU-China': {'lat': 30.5360485, 'lng': 114.3643219}, 'NEU China A': None, 'EPFL': {'lat': 46.5190557, 'lng': 6.5667576}, 'HZAU-China': {'lat': 30.475126, 'lng': 114.353035}, 'GO Paris-Saclay': None, 'BostonU': {'lat': 42.3600825, 'lng': -71.0588801}, 'WashU StLouis': {'lat': 38.6487895, 'lng': -90.31079620000001}, 'Rice': {'lat': 36.1007073, 'lng': -95.9037475}, 'William and Mary': {'lat': 37.271674, 'lng': -76.71337799999999}, 'TecMonterrey GDL': {'lat': 20.7353206, 'lng': -103.4555127}, 'TecCEM': None, 'Toulouse-INSA-UPS': {'lat': 43.5696438, 'lng': 1.4677288}, 'Jiangnan China': {'lat': 22.781631, 'lng': 108.273158}, 'FJNU-China': {'lat': 26.0252776, 'lng': 119.2117845}, 'HKJS S': {'lat': 22.261919, 'lng': 114.190797}, 'Edinburgh UG': {'lat': 55.9445158, 'lng': -3.1892413}, 'Thessaloniki': {'lat': 40.6400629, 'lng': 22.9444191}, 'HBUT-China': {'lat': 30.481761, 'lng': 114.31096}, 'NCTU Formosa': {'lat': 24.7859852, 'lng': 120.9999097}, 'Worldshaper-XSHS': None, 'SCUT ChinaB': {'lat': 23.151326, 'lng': 113.344683}, 'UMass Dartmouth': {'lat': 41.6282132, 'lng': -71.00415}, 'BGIC-Global': None, 'TUST China': {'lat': 39.083961, 'lng': 117.708631}, 'CPU CHINA': {'lat': 32.072145, 'lng': 118.77875}, 'British Columbia': {'lat': 53.7266683, 'lng': -127.6476205}, 'SCU-China': {'lat': 30.26380319999999, 'lng': 102.8054753}, 'Manchester': {'lat': 53.4807593, 'lng': -2.2426305}, 'USP-Brazil': {'lat': -23.5613991, 'lng': -46.7307891}, 'Duke': {'lat': 36.0014258, 'lng': -78.9382286}, 'CSU CHINA': {'lat': 28.16437, 'lng': 112.93251}, 'Aachen': {'lat': 50.7753455, 'lng': 6.083886800000001}, 'ULaVerne Collab': None, 'Stockholm': {'lat': 59.32932349999999, 'lng': 18.0685808}, 'USP-EEL-Brazil': {'lat': -22.6982137, 'lng': -45.1186439}, 'Bio Without Borders': {'lat': 40.6877335, 'lng': -73.9797385}, 'Hong Kong HKUST': {'lat': 22.3363998, 'lng': 114.2654655}, 'Stanford': {'lat': 37.4274745, 'lng': -122.169719}, 'New York City': {'lat': 40.7127753, 'lng': -74.0059728}, 'NTHU Taiwan': {'lat': 24.7947253, 'lng': 120.9932316}, 'UGA': {'lat': 33.9480053, 'lng': -83.3773221}, 'Stanford-Brown-RISD': {'lat': 41.8258538, 'lng': -71.4077368}, 'NCKU Tainan': {'lat': 22.9988416, 'lng': 120.2195148}, 'Bilkent-UNAMBG': {'lat': 39.86769899999999, 'lng': 32.747576}, 'UConn': {'lat': 41.8077414, 'lng': -72.2539805}, 'METU HS Ankara': {'lat': 39.8910203, 'lng': 32.7780027}, 'Paris Bettencourt': None, 'Lubbock TTU': {'lat': 33.5842591, 'lng': -101.8782822}, 'SCUT-ChinaA': {'lat': 23.151326, 'lng': 113.344683}, 'LACAS BioBots': {'lat': 39.976112, 'lng': -75.040717}, 'AHUT China': {'lat': 31.692956, 'lng': 118.510711}, 'UESTC-China': {'lat': 30.6624863, 'lng': 104.1021662}, 'CCU Taiwan': {'lat': 23.5633761, 'lng': 120.4728831}, 'USTC-Software': None, 'Hawaii': {'lat': 19.8967662, 'lng': -155.5827818}, 'IISER-Bhopal-India': {'lat': 23.2883503, 'lng': 77.2757147}, 'ECUST': {'lat': 31.140897, 'lng': 121.425248}, 'Bulgaria': {'lat': 42.733883, 'lng': 25.48583}, 'Utrecht': {'lat': 52.09073739999999, 'lng': 5.1214201}, 'Austin LASA': {'lat': 30.313549, 'lng': -97.656741}, 'DNHS SanDiego': {'lat': 33.0144484, 'lng': -117.1214139}, 'ULaval': {'lat': 46.78174629999999, 'lng': -71.2747424}, 'REC-CHENNAI': {'lat': 13.009575, 'lng': 80.004243}, 'SUSTech Shenzhen': {'lat': 22.593969, 'lng': 113.99894}, 'Nottingham': {'lat': 52.95478319999999, 'lng': -1.1581086}, 'USTC': {'lat': 39.9812793, 'lng': -75.7377941}, 'Calgary': {'lat': 51.04473309999999, 'lng': -114.0718831}, 'Georgia State': {'lat': 33.753068, 'lng': -84.38528190000001}, 'VIT Vellore': {'lat': 12.972067, 'lng': 79.1595619}, 'ASIJ Tokyo': {'lat': 35.6815422, 'lng': 139.5215285}, 'UMaryland': {'lat': 39.2892017, 'lng': -76.6257057}, 'Cardiff Wales': {'lat': 51.48158100000001, 'lng': -3.17909}, 'Stony Brook': {'lat': 40.9256538, 'lng': -73.1409429}, 'KAIT JAPAN': {'lat': 35.4865554, 'lng': 139.3432554}, 'SSTi-SZGD': None, 'Fudan': {'lat': 31.2974197, 'lng': 121.5036178}, 'Ruia-Mumbai': {'lat': 19.023554, 'lng': 72.85005679999999}, 'RDFZ-China': {'lat': 39.973592, 'lng': 116.312477}, 'ICT-Mumbai': {'lat': 19.0239192, 'lng': 72.8575207}, 'NAWI Graz': None, 'Pasteur Paris': {'lat': 48.8429006, 'lng': 2.3126028}, 'IISER-Kolkata': {'lat': 22.9638419, 'lng': 88.5245023}, 'Rheda Bielefeld': {'lat': 51.8458575, 'lng': 8.299742499999999}, 'NWU-China': {'lat': 34.14552, 'lng': 108.875136}, 'Evry Paris-Saclay': {'lat': 48.6241125, 'lng': 2.4271811}, 'SHSBNU China': {'lat': 39.9534773, 'lng': -75.1565547}, 'BOKU-Vienna': {'lat': 48.2365448, 'lng': 16.337579}, 'HAFS': {'lat': 42.5624423, 'lng': -88.3309336}, 'NUDT CHINA': None, 'SYSU-Software': {'lat': 33.662781, 'lng': -117.750974}, 'Marburg': {'lat': 50.8021728, 'lng': 8.7667933}, 'UC San Diego': {'lat': 32.8800604, 'lng': -117.2340135}, 'SKLMT-China': None, 'Montpellier': {'lat': 43.610769, 'lng': 3.876716}, 'Ecuador': {'lat': -1.831239, 'lng': -78.18340599999999}, 'UofGuelph': {'lat': 43.5327217, 'lng': -80.22618039999999}, 'KUAS Korea': None, 'Madrid-OLM': {'lat': 40.4711643, 'lng': -3.685803}, 'ShanghaiTech': {'lat': 31.1763741, 'lng': 121.5924518}, 'Yale': {'lat': 41.3163244, 'lng': -72.92234309999999}, 'UESTC-Software': {'lat': 30.6624863, 'lng': 104.1021662}, 'McMaster': {'lat': 43.260879, 'lng': -79.9192254}, 'NPU-China': None, 'UPF CRG Barcelona': {'lat': 41.3853788, 'lng': 2.1940517}, 'BIT': {'lat': 36.4008825, 'lng': -95.7841234}, 'Aix-Marseille': {'lat': 43.29362099999999, 'lng': 5.358066}, 'Queens Canada': {'lat': 44.2252795, 'lng': -76.49514119999999}, 'WLC-Milwaukee': {'lat': 43.0367864, 'lng': -88.02269230000002}, 'TJU China': None, 'Tsinghua': {'lat': 39.9996674, 'lng': 116.3264439}, 'Kyoto': {'lat': 35.011564, 'lng': 135.7681489}, 'SUIS Shanghai': {'lat': 31.189341, 'lng': 121.40646}, 'UNebraska-Lincoln': {'lat': 40.8201966, 'lng': -96.70047629999999}, 'DLUT China B': {'lat': 38.880381, 'lng': 121.529021}, 'OLS Canmore Canada': {'lat': 51.0494006, 'lng': -115.3184598}, 'UCL': {'lat': 51.52455920000001, 'lng': -0.1340401}, 'Warwick': {'lat': 41.2638494, 'lng': -74.3822058}, 'BostonU HW': {'lat': 42.3436095, 'lng': -71.0651063}, 'Unesp Brazil': {'lat': -21.7936447, 'lng': -48.1814324}, 'NDC-HighRiverAB': {'lat': 50.5916726, 'lng': -113.8947432}, 'Imperial College': {'lat': 51.49879970000001, 'lng': -0.1748772}, 'Tufts': {'lat': 42.4074843, 'lng': -71.1190232}, 'TU-Eindhoven': {'lat': 51.44860980000001, 'lng': 5.4907148}, 'Groningen': {'lat': 53.2193835, 'lng': 6.5665017}, 'TU Darmstadt': {'lat': 49.8748277, 'lng': 8.6563281}, 'Macquarie Australia': {'lat': 38.9301179, 'lng': -94.6876484}, 'Tongji China': {'lat': 31.2627211, 'lng': 121.4598975}, 'UCAS-China': {'lat': 40.408141, 'lng': 116.682386}, 'CU-Boulder': {'lat': 40.00758099999999, 'lng': -105.2659417}, 'iTesla-SoundBio': {'lat': 47.663322, 'lng': -122.316022}, 'US AFRL CarrollHS': None, 'Washington': {'lat': 47.7510741, 'lng': -120.7401385}, 'St Andrews': {'lat': 37.224502, 'lng': -95.7015653}, 'XMU-China': {'lat': 24.4373484, 'lng': 118.097855}, 'Aalto-Helsinki': {'lat': 60.2095893, 'lng': 24.9764658}, 'Michigan': {'lat': 44.3148443, 'lng': -85.60236429999999}, 'UAlberta': {'lat': 53.5232189, 'lng': -113.5263186}, 'CUNY Kingsborough': {'lat': 40.5786362, 'lng': -73.9345287}, 'UIUC Illinois': {'lat': 40.1019523, 'lng': -88.2271615}, 'NAU-CHINA': {'lat': 32.033399, 'lng': 118.842587}, 'Xidian': {'lat': 34.121605, 'lng': 108.840431}, 'Edinburgh OG': {'lat': 55.9343556, 'lng': -3.2003534}}
 # print(len(geo_from_json))
@@ -222,18 +210,6 @@ def main_scrape():
         soup = BeautifulSoup(response.text, "html.parser")
         cur_year_links = soup.findAll('a')
         print(cur_year_links)
-        # for i in cur_year_links:      
-        #   print("NEXT TEAM")
-        #   print("-"*50)
-        #   team_page_link = i.get("href")
-        #   if team_page_link != None and len(team_page_link) > 26:
-        #       print(team_page_link[26:])
-        #       # print(team_page_link)
-        #       # if team_page_link != 'http://2015.igem.org/Team:CityU HK':
-        #       #   continue
-
-        #       team_name = team_page_link[26:].replace(" ", "_")
-        #       all_teams.add(team_name)
         print(all_teams)
         # START AGAIN AT TEAM 100
         for i in cur_year_links[224:]:
@@ -242,13 +218,8 @@ def main_scrape():
             team_page_link = i.get("href")
             if team_page_link != None and len(team_page_link) > 21:
                 print(team_page_link[21:])
-                # print(team_page_link)
-                # if team_page_link != 'http://2015.igem.org/Team:CityU HK':
-                #   continue
                 original_team_name = team_page_link[26:].replace(" ", "_")
                 team_name = team_page_link[21:].replace(" ", "_")
-                # if team_name != 'Team:CityU HK':
-                #   continue
                 word_freq, collabs = get_soup(team_page_link, team_name, original_team_name)
                 print(word_freq.most_common(20))
                 print("collabs", collabs)
@@ -266,44 +237,45 @@ main_scrape()
 print(team_collabs)
 print("Finished scrape.")
 
-# data = {"test_key": {"v":1, "v2":2}}
 
-# # df = pd.DataFrame(list(d.items()))
-# print(df)
-# print(df.keys())
-# # df = 
+def graph_teams():
+	global geo_from_json, team_collabs
+	df = pd.DataFrame.from_dict(geo_from_json, orient='index').reset_index()
+	print(df)
+	print(df.keys())
+	fig = go.Figure(data=go.Scattergeo(
+	        lon = df['lng'],
+	        lat = df['lat'],
+	        text = df['index'],
+	        mode = 'markers',
+	        # marker_color = df['cnt'],
+	        hoverinfo = "text",
+	        ))
+	fig.update_layout(
+	        title = 'iGEM Team Collaborations'
+	        # geo_scope='usa',
+	    )
 
-df = pd.DataFrame.from_dict(geo_from_json, orient='index').reset_index()
-print(df)
-print(df.keys())
-fig = go.Figure(data=go.Scattergeo(
-        lon = df['lng'],
-        lat = df['lat'],
-        text = df['index'],
-        mode = 'markers',
-        # marker_color = df['cnt'],
-        ))
-fig.update_layout(
-        title = 'iGEM Team Collaborations',
-        # geo_scope='usa',
-    )
+	# team_collabs = []
+	for i in range(len(df)):
+	    first_team = df['index'][i]
+	    if first_team in team_collabs:
+	        for k in team_collabs[first_team]:
+	            print(first_team, k)
+	            fig.add_trace(
+	                go.Scattergeo(
+	                    # locationmode = 'USA-states',
+	                    lon = [geo_from_json[first_team]['lng'], geo_from_json[k]['lng']],
+	                    lat = [geo_from_json[first_team]['lat'], geo_from_json[k]['lat']],
+	                    mode = 'lines',
+	                    line = dict(width = 1,color = 'red'),
+	                    opacity =  0.8,
+	                    name=first_team+"<>"+k,
+	                    hoverinfo="skip"
+	                )
+	            )
+	fig.update_layout(showlegend=False)
+	fig.show()
 
-# team_collabs = []
-for i in range(len(df)):
-    first_team = df['index'][i]
-    if first_team in team_collabs:
-        for k in team_collabs[first_team]:
-            print(first_team, k)
-            fig.add_trace(
-                go.Scattergeo(
-                    # locationmode = 'USA-states',
-                    lon = [geo_from_json[first_team]['lng'], geo_from_json[k]['lng']],
-                    lat = [geo_from_json[first_team]['lat'], geo_from_json[k]['lat']],
-                    mode = 'lines',
-                    line = dict(width = 1,color = 'red'),
-                    opacity =  0.8,
-                )
-            )
-
-
-fig.show()
+# graph_teams()
+# print("Finished graphing")
