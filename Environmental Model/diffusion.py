@@ -212,9 +212,9 @@ uB1,uB2,uB3=split(uB)
 w = Function(VelocitySpace)
 
 # Constants
-km = Constant(5.8e-9) # mol/cm^3
-vmax = 5e-9 # degradation in mol/cm^3/day
-k_deg = 2.177e-9 # 1/day
+km = Constant(5.8e-6) # mol
+vmax = 4e-7 # degradation in mol/day
+k_deg = 9.65 # 1/day
 ks = 1.4e-6 # 1/day
 
 A1 = inner(D*grad(uA1),grad(v1))*dt*dx(0) + inner(Dr*grad(uA1),grad(v1))*dt*dx(1)\
