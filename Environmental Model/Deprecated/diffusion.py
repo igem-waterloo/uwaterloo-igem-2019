@@ -144,7 +144,7 @@ for n in range(num_steps):
 	solve(Av1, vel_u_.vector(), bv1, 'bicgstab', 'hypre_amg')
 	# Step 2: Pressure correction step
 	bv2 = assemble(Lv2)
-[bc.apply(bv2) for bc in bcp]
+	[bc.apply(bv2) for bc in bcp]
 	solve(Av2, pre_p_.vector(), bv2, 'bicgstab', 'hypre_amg')
 	# Step 3: Velocity correction step
 	bv3 = assemble(Lv3)
